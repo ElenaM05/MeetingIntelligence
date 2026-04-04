@@ -1,26 +1,25 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { uploadTranscripts, listTranscripts, deleteTranscript, extractTranscripts } from "../api/client";
-import { Upload, FileText, Trash2, Zap, AlertCircle, CheckCircle, Clock, Users, MessageSquare } from "lucide-react";
+import { uploadTranscripts, listTranscripts, deleteTranscript, startSession } from "../api/client";
+import { Upload, FileText, Trash2, AlertCircle, CheckCircle, Clock, Users, MessageSquare, ChevronRight, Loader } from "lucide-react";
 
 export default function Home() {
   const navigate = useNavigate();
   const [transcripts, setTranscripts] = useState([]);
   const [uploading, setUploading] = useState(false);
-  const [extracting, setExtracting] = useState({});
   const [error, setError] = useState(null);
   const [dragOver, setDragOver] = useState(false);
   const [toast, setToast] = useState(null);
 
   const showToast = (msg, type = "success") => {
     setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
+    setTimeout(() => setToast(null), 4000);
   };
 
   const loadTranscripts = useCallback(async () => {
     try {
       const res = await listTranscripts();
-      setTranscripts(res.data.transcripts || res.data || []);
+      setTranscripts(res.data.transcripts || []);
     } catch {
       setError("Failed to load transcripts.");
     }
@@ -31,8 +30,8 @@ export default function Home() {
   }, [loadTranscripts]);
 
   const handleFiles = async (files) => {
-    const valid = Array.from(files).filter((f) =>
-      f.name.endsWith(".txt") || f.name.endsWith(".vtt")
+    const valid = Array.from(files).filter(
+      (f) => f.name.endsWith(".txt") || f.name.endsWith(".vtt")
     );
     if (!valid.length) {
       showToast("Only .txt and .vtt files are supported.", "error");
@@ -43,8 +42,12 @@ export default function Home() {
     try {
       const res = await uploadTranscripts(valid);
       const { uploaded, errors } = res.data;
-      if (uploaded.length) showToast(`Uploaded ${uploaded.length} file(s) successfully.`);
-      if (errors.length) showToast(`${errors.length} file(s) failed to upload.`, "error");
+      if (uploaded.length) {
+        showToast(`Uploaded and extracted ${uploaded.length} file(s).`);
+      }
+      if (errors.length) {
+        showToast(`${errors.length} file(s) failed.`, "error");
+      }
       await loadTranscripts();
     } catch {
       setError("Upload failed. Make sure the backend is running.");
@@ -59,20 +62,8 @@ export default function Home() {
     handleFiles(e.dataTransfer.files);
   };
 
-  const handleExtract = async (id) => {
-    setExtracting((prev) => ({ ...prev, [id]: true }));
-    try {
-      await extractTranscripts([id]);
-      showToast("Extraction complete.");
-      navigate(`/results/${id}`);
-    } catch {
-      showToast("Extraction failed.", "error");
-    } finally {
-      setExtracting((prev) => ({ ...prev, [id]: false }));
-    }
-  };
-
-  const handleDelete = async (id) => {
+  const handleDelete = async (id, e) => {
+    e.stopPropagation();
     try {
       await deleteTranscript(id);
       showToast("Transcript deleted.");
@@ -82,9 +73,9 @@ export default function Home() {
     }
   };
 
-  const handleChat = async (id) => {
+  const handleChat = async (id, e) => {
+    e.stopPropagation();
     try {
-      const { startSession } = await import("../api/client");
       const res = await startSession([id]);
       navigate(`/chat/${res.data.session_id}`);
     } catch {
@@ -96,8 +87,10 @@ export default function Home() {
     <div className="max-w-5xl mx-auto px-6 py-10">
       {/* Toast */}
       {toast && (
-        <div className={`fixed top-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium shadow-xl transition-all ${
-          toast.type === "error" ? "bg-red-500/10 border border-red-500/30 text-red-400" : "bg-emerald-500/10 border border-emerald-500/30 text-emerald-400"
+        <div className={`fixed top-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium shadow-xl ${
+          toast.type === "error"
+            ? "bg-red-500/10 border border-red-500/30 text-red-400"
+            : "bg-emerald-500/10 border border-emerald-500/30 text-emerald-400"
         }`}>
           {toast.type === "error" ? <AlertCircle size={15} /> : <CheckCircle size={15} />}
           {toast.msg}
@@ -110,7 +103,7 @@ export default function Home() {
           Meeting Transcripts
         </h1>
         <p className="text-stone-400 text-sm">
-          Upload .txt or .vtt transcript files to extract decisions, action items, and insights.
+          Upload .txt or .vtt files — decisions and action items are extracted automatically.
         </p>
       </div>
 
@@ -119,10 +112,12 @@ export default function Home() {
         onDrop={handleDrop}
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
-        onClick={() => document.getElementById("file-input").click()}
+        onClick={() => !uploading && document.getElementById("file-input").click()}
         className={`border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all mb-8 ${
           dragOver
             ? "border-emerald-500 bg-emerald-500/5"
+            : uploading
+            ? "border-stone-700 bg-stone-900/50 cursor-default"
             : "border-stone-700 hover:border-stone-500 hover:bg-stone-900/50"
         }`}
       >
@@ -137,16 +132,20 @@ export default function Home() {
         <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 transition-colors ${
           dragOver ? "bg-emerald-500/20" : "bg-stone-800"
         }`}>
-          <Upload size={24} className={dragOver ? "text-emerald-400" : "text-stone-400"} />
+          {uploading
+            ? <Loader size={24} className="text-emerald-400 animate-spin" />
+            : <Upload size={24} className={dragOver ? "text-emerald-400" : "text-stone-400"} />
+          }
         </div>
         {uploading ? (
-          <p className="text-stone-300 font-medium">Uploading...</p>
+          <>
+            <p className="text-stone-300 font-medium mb-1">Uploading and extracting...</p>
+            <p className="text-stone-500 text-sm">This may take a few seconds</p>
+          </>
         ) : (
           <>
-            <p className="text-stone-300 font-medium mb-1">
-              Drop files here or click to browse
-            </p>
-            <p className="text-stone-500 text-sm">.txt and .vtt files supported</p>
+            <p className="text-stone-300 font-medium mb-1">Drop files here or click to browse</p>
+            <p className="text-stone-500 text-sm">.txt and .vtt files · Extraction happens automatically</p>
           </>
         )}
       </div>
@@ -172,7 +171,8 @@ export default function Home() {
           {transcripts.map((t) => (
             <div
               key={t.id}
-              className="bg-stone-900 border border-stone-800 rounded-2xl p-5 flex items-center justify-between gap-4 hover:border-stone-700 transition-colors group"
+              onClick={() => navigate(`/results/${t.id}`)}
+              className="bg-stone-900 border border-stone-800 rounded-2xl p-5 flex items-center justify-between gap-4 hover:border-stone-700 transition-colors group cursor-pointer"
             >
               <div className="flex items-center gap-4 min-w-0">
                 <div className="w-10 h-10 rounded-xl bg-stone-800 flex items-center justify-center flex-shrink-0">
@@ -189,7 +189,8 @@ export default function Home() {
                     {t.speakers?.length > 0 && (
                       <span className="text-xs text-stone-500 flex items-center gap-1">
                         <Users size={11} />
-                        {t.speakers.join(", ")}
+                        {t.speakers.slice(0, 3).join(", ")}
+                        {t.speakers.length > 3 && ` +${t.speakers.length - 3}`}
                       </span>
                     )}
                   </div>
@@ -198,32 +199,25 @@ export default function Home() {
 
               <div className="flex items-center gap-2 flex-shrink-0">
                 <button
-                  onClick={() => handleChat(t.id)}
+                  onClick={(e) => { e.stopPropagation(); navigate(`/results/${t.id}`); }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-stone-400 hover:text-stone-200 hover:bg-stone-800 transition-colors"
+                >
+                  View
+                </button>
+                <button
+                  onClick={(e) => handleChat(t.id, e)}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-stone-400 hover:text-stone-200 hover:bg-stone-800 transition-colors"
                 >
                   <MessageSquare size={13} />
                   Chat
                 </button>
                 <button
-                  onClick={() => navigate(`/results/${t.id}`)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-stone-400 hover:text-stone-200 hover:bg-stone-800 transition-colors"
-                >
-                  View
-                </button>
-                <button
-                  onClick={() => handleExtract(t.id)}
-                  disabled={extracting[t.id]}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors disabled:opacity-50"
-                >
-                  <Zap size={13} />
-                  {extracting[t.id] ? "Extracting..." : "Extract"}
-                </button>
-                <button
-                  onClick={() => handleDelete(t.id)}
+                  onClick={(e) => handleDelete(t.id, e)}
                   className="p-1.5 rounded-lg text-stone-600 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100"
                 >
                   <Trash2 size={13} />
                 </button>
+                <ChevronRight size={15} className="text-stone-600" />
               </div>
             </div>
           ))}

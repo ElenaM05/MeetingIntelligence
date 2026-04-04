@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getExtractionResult, extractTranscripts, exportCSV, exportPDF, exportJSON } from "../api/client";
-import { ArrowLeft, Download, Zap, CheckSquare, Lightbulb, Users, Calendar, AlertCircle, MessageSquare } from "lucide-react";
+import { ArrowLeft, Download, Zap, CheckSquare, Lightbulb, Users, Calendar, AlertCircle, MessageSquare, ChevronDown } from "lucide-react";
 
 const PRIORITY_STYLES = {
   high: "bg-red-500/10 text-red-400 border-red-500/20",
@@ -17,6 +17,8 @@ export default function Results() {
   const [extracting, setExtracting] = useState(false);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("actions");
+  const [exportOpen, setExportOpen] = useState(false);
+  const exportRef = useRef(null);
 
   useEffect(() => {
     const load = async () => {
@@ -31,6 +33,17 @@ export default function Results() {
     };
     load();
   }, [id]);
+
+  // Close export dropdown when clicking outside
+  useEffect(() => {
+    const handler = (e) => {
+      if (exportRef.current && !exportRef.current.contains(e.target)) {
+        setExportOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   const handleExtract = async () => {
     setExtracting(true);
@@ -89,7 +102,7 @@ export default function Results() {
         <>
           {/* Header */}
           <div className="flex items-start justify-between mb-8 gap-4">
-            <div>
+            <div className="min-w-0">
               <h1 className="text-2xl font-bold text-stone-100 tracking-tight mb-1">
                 {result.source_filename || "Extraction Results"}
               </h1>
@@ -113,16 +126,40 @@ export default function Results() {
                 <Zap size={14} />
                 {extracting ? "Re-extracting..." : "Re-extract"}
               </button>
-              <div className="relative group">
-                <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500 text-stone-950 text-sm font-semibold hover:bg-emerald-400 transition-colors">
+
+              {/* Export dropdown — click to open, click outside to close */}
+              <div className="relative" ref={exportRef}>
+                <button
+                  onClick={() => setExportOpen((prev) => !prev)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500 text-stone-950 text-sm font-semibold hover:bg-emerald-400 transition-colors"
+                >
                   <Download size={14} />
                   Export
+                  <ChevronDown size={13} className={`transition-transform ${exportOpen ? "rotate-180" : ""}`} />
                 </button>
-                <div className="absolute right-0 top-full mt-2 bg-stone-800 border border-stone-700 rounded-xl overflow-hidden shadow-xl z-10 hidden group-hover:block min-w-32">
-                  <a href={exportCSV(id)} className="block px-4 py-2.5 text-sm text-stone-300 hover:bg-stone-700 hover:text-stone-100 transition-colors">CSV</a>
-                  <a href={exportPDF(id)} className="block px-4 py-2.5 text-sm text-stone-300 hover:bg-stone-700 hover:text-stone-100 transition-colors">PDF</a>
-                  <a href={exportJSON(id)} className="block px-4 py-2.5 text-sm text-stone-300 hover:bg-stone-700 hover:text-stone-100 transition-colors">JSON</a>
-                </div>
+                {exportOpen && (
+                  <div className="absolute right-0 top-full mt-2 bg-stone-800 border border-stone-700 rounded-xl overflow-hidden shadow-xl z-20 min-w-32">
+                    <button
+                      onClick={() => { exportCSV(id); setExportOpen(false); }}
+                      className="block w-full text-left px-4 py-2.5 text-sm text-stone-300 hover:bg-stone-700 hover:text-stone-100 transition-colors"
+                    >
+                      CSV
+                    </button>
+                    <button
+                      onClick={() => { exportPDF(id); setExportOpen(false); }}
+                      className="block w-full text-left px-4 py-2.5 text-sm text-stone-300 hover:bg-stone-700 hover:text-stone-100 transition-colors"
+                    >
+                      PDF
+                    </button>
+                    <button
+                      onClick={() => { exportJSON(id); setExportOpen(false); }}
+                      className="block w-full text-left px-4 py-2.5 text-sm text-stone-300 hover:bg-stone-700 hover:text-stone-100 transition-colors"
+                    >
+                      JSON
+                    </button>
+                    
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -176,7 +213,12 @@ export default function Results() {
                 </thead>
                 <tbody>
                   {result.action_items?.map((item, i) => (
-                    <tr key={item.id} className={`border-b border-stone-800/50 hover:bg-stone-800/30 transition-colors ${i === result.action_items.length - 1 ? "border-b-0" : ""}`}>
+                    <tr
+                      key={item.id}
+                      className={`border-b border-stone-800/50 hover:bg-stone-800/30 transition-colors ${
+                        i === result.action_items.length - 1 ? "border-b-0" : ""
+                      }`}
+                    >
                       <td className="px-5 py-4 text-sm text-stone-200 max-w-xs">{item.what}</td>
                       <td className="px-5 py-4">
                         <span className="flex items-center gap-2">
@@ -226,7 +268,7 @@ export default function Results() {
                       {d.participants?.length > 0 && (
                         <div className="flex items-center gap-2">
                           <Users size={11} className="text-stone-600" />
-                          <div className="flex gap-1.5">
+                          <div className="flex gap-1.5 flex-wrap">
                             {d.participants.map((p) => (
                               <span key={p} className="text-xs px-2 py-0.5 rounded-md bg-stone-800 text-stone-400 border border-stone-700">
                                 {p}

@@ -1,9 +1,10 @@
 import os
 import json
 import re
-from groq import Groq
+from cerebras.cloud.sdk import Cerebras
 
-client = Groq(api_key=os.environ["GROQ_API_KEY"])
+# Singleton client — Cerebras recommends not reconstructing on every call
+client = Cerebras(api_key=os.environ["CEREBRAS_API_KEY"])
 
 EXTRACTION_SYSTEM_PROMPT = """
 You are a meeting analyst. Your job is to carefully read meeting transcripts and extract structured information.
@@ -46,16 +47,16 @@ Rules:
 
 def extract_from_transcript(text: str, filename: str) -> dict:
     """
-    Call the Groq API to extract decisions and action items from a transcript.
+    Call the Cerebras API to extract decisions and action items from a transcript.
     Returns the parsed extraction result.
     """
     user_message = f"Transcript filename: {filename}\n\n---\n\n{text[:40000]}"
 
     message = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        model="gpt-oss-120b",
         max_tokens=4096,
         messages=[
-            {"role": "system", "content": EXTRACTION_SYSTEM_PROMPT},  # ← move it here
+            {"role": "system", "content": EXTRACTION_SYSTEM_PROMPT},
             {"role": "user", "content": user_message},
         ],
     )
