@@ -4,3 +4,4 @@ python-multipart==0.0.9
 groq==0.4.1
 pydantic==2.8.2
 python-dotenv==1.0.0
+reportlab==4.0.9

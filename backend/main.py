@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from routers import transcripts, extract
+from routers import transcripts, extract, chat
 from storage import init_storage
 
 
@@ -33,6 +33,7 @@ app.add_middleware(
 
 app.include_router(transcripts.router, prefix="/api/transcripts", tags=["Transcripts"])
 app.include_router(extract.router, prefix="/api/extract", tags=["Extraction"])
+app.include_router(chat.router, prefix="/api/chat", tags=["Chat"])
 
 
 @app.get("/health")

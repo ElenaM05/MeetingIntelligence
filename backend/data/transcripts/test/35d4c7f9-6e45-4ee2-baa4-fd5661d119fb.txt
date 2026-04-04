@@ -1,0 +1,289 @@
+================================================================
+MEETING TRANSCRIPT
+================================================================
+
+Meeting Title : Q3 Product & Engineering Sync
+Date          : April 3, 2026
+Time          : 10:00 AM – 12:00 PM
+Location      : Google Meet
+Attendees     : Sarah (facilitator), James, Priya, Tom, Linda, Marcus, Aisha, Kevin
+
+================================================================
+TRANSCRIPT
+================================================================
+
+[00:00] Sarah
+Good morning everyone. Thanks for joining. We have a packed agenda today — product roadmap review, engineering capacity planning, design system updates, customer feedback review, and a few cross-team blockers to work through. Let's get into it.
+
+[01:10] James
+Before we dive in, I want to flag that we still haven't resolved the authentication service issue from last sprint. It's been sitting in the backlog and it's starting to affect downstream teams.
+
+[02:05] Sarah
+Noted. We'll make sure that gets addressed today. Priya, do you want to kick us off with the roadmap update?
+
+[02:45] Priya
+Sure. So Q3 roadmap has three major pillars — user onboarding redesign, analytics dashboard v2, and the mobile app beta. Onboarding redesign is on track, we're about 60% through the design phase. Analytics dashboard has hit a dependency on the data pipeline work that Marcus's team is doing. Mobile app beta is slightly behind — we originally targeted end of May for internal testing but that's looking more like mid-June now.
+
+[04:30] Sarah
+Tom, can you speak to the data pipeline dependency Priya mentioned?
+
+[05:00] Tom
+Yeah so the pipeline refactor is about 70% done. The main blocker right now is the third-party data provider — they changed their API schema without notice two weeks ago and we've had to rework our ingestion layer. We expect to have a stable version by April 17th, give or take a few days.
+
+[06:20] Priya
+That means analytics dashboard v2 is also blocked until at least April 17th. I'll need to revise the timeline for that workstream. Realistically we're looking at end of May for the dashboard MVP.
+
+[07:10] Sarah
+Okay. Let's mark that as a formal dependency. Marcus, does your team have enough support for the pipeline work?
+
+[07:45] Marcus
+We're stretched. Kevin has been pulled into the mobile app work and Aisha is handling the auth service bug. It would help if we could get one more engineer on the pipeline for the next two weeks.
+
+[08:30] Sarah
+James, is there any slack on your side to support Marcus's team?
+
+[09:00] James
+We can move Daniel over for two weeks starting Monday. He's been finishing up the notification service work which should wrap by end of this week.
+
+[09:40] Sarah
+Great. Let's confirm that — Daniel moves to pipeline support from Monday April 7th for two weeks. Marcus, please sync with James offline to onboard Daniel quickly.
+
+[10:20] Marcus
+Will do. I'll reach out to James today.
+
+[11:00] Aisha
+On the auth service — I've identified the root cause. It's a race condition in the token refresh logic that only surfaces under high concurrency. I have a fix ready for review but I need someone to pair with me on testing because it touches the session management layer.
+
+[12:15] Kevin
+I can pair with Aisha on that tomorrow morning. We should be able to validate the fix in a few hours if we use the staging environment.
+
+[12:50] Sarah
+Perfect. Aisha and Kevin, please pair on auth fix validation tomorrow. Target is to have it merged and deployed by end of day Wednesday April 8th.
+
+[13:30] Linda
+Can I jump in on the design system update? We've finalized the new component library — buttons, inputs, modals, navigation — and it's ready for engineering review. I'd like to schedule a handoff session this week.
+
+[14:10] James
+We can do Thursday afternoon. I'll get the frontend engineers into a session with Linda.
+
+[14:40] Sarah
+Let's lock that in — design system handoff Thursday April 10th at 2 PM. James to coordinate attendees.
+
+[15:20] Priya
+One more thing on onboarding redesign — user research is done and we have some strong insights. The biggest pain point is the multi-step form on signup. Users are dropping off at step three which is the company details section. We're proposing to make that section optional and move it to post-signup.
+
+[16:30] Sarah
+That makes sense. Is that a product decision we can make today?
+
+[16:50] Priya
+I think so. It doesn't require any new infrastructure — just a flow change and some copy updates.
+
+[17:10] Sarah
+Okay. Decision: company details section in signup will be made optional and moved to post-signup flow. Priya to update the design spec by end of next week. Linda to update wireframes accordingly.
+
+[18:00] Linda
+Noted. I'll coordinate with Priya.
+
+[18:30] Tom
+Quick update on infrastructure — we're planning to migrate the staging environment to the new Kubernetes cluster next weekend, April 12th-13th. There will be a 4-6 hour window where staging will be unavailable. I'll send out the maintenance window notice by Wednesday.
+
+[19:20] Sarah
+Good heads up. Everyone please factor that into your sprint planning. Tom, please also make sure QA is looped in since they rely heavily on staging.
+
+[19:55] Tom
+Will do. I'll cc Rachel from QA on the maintenance notice.
+
+[20:30] Marcus
+I also want to raise a process concern. We've had three incidents in the last month where engineers pushed directly to the main branch without PR review. We need to enforce branch protection rules properly.
+
+[21:15] James
+Agreed. I'll update the GitHub repository settings today to require at least two approvals before merge and disable direct pushes to main.
+
+[21:55] Sarah
+Good. James to enforce branch protection on GitHub by end of today. Marcus, can you document the incident pattern so we have it for the retrospective?
+
+[22:30] Marcus
+Sure, I'll write it up by Friday.
+
+[23:00] Kevin
+One thing from the mobile side — we're blocked on the push notification service. The third-party provider we were planning to use has deprecated their SDK and the new version has breaking changes. We need to decide whether to upgrade or switch providers.
+
+[24:00] Priya
+What are the options?
+
+[24:20] Kevin
+Option one is upgrade to the new SDK — estimated two to three days of engineering work but we're dependent on their new documentation which is incomplete. Option two is switch to Firebase Cloud Messaging — it's more work upfront, maybe five days, but it's more reliable long term.
+
+[25:10] Sarah
+What's your recommendation Kevin?
+
+[25:30] Kevin
+I'd go with Firebase. The current provider has been unreliable and this migration gives us a more stable foundation.
+
+[26:00] Sarah
+Agreed. Decision: migrate push notifications to Firebase Cloud Messaging. Kevin to lead, targeting completion by April 18th. Please flag if you need additional support.
+
+[26:45] Kevin
+Will do. I'll start the migration plan today.
+
+[27:10] Aisha
+Related to mobile — the deep link handling on iOS is broken in the current build. Users clicking links from email are landing on the home screen instead of the intended destination. I have a fix but it needs QA validation before we ship.
+
+[28:00] Sarah
+Kevin, can you coordinate with QA on Aisha's fix?
+
+[28:20] Kevin
+Yes, I'll loop in Rachel tomorrow.
+
+[28:45] Sarah
+Good. Let's move to customer feedback. Priya, can you summarize the latest batch?
+
+[29:10] Priya
+We processed 340 support tickets and 89 NPS responses from last month. Three themes are coming up repeatedly. First, users want better export options — specifically PDF and Excel. We've heard this 47 times in the last 30 days. Second, the search functionality is too slow — average search response time is 4.2 seconds and users expect under one second. Third, users want team collaboration features — shared workspaces, commenting, activity feeds.
+
+[30:30] Tom
+The search performance issue is something we can address fairly quickly. The current implementation is doing a full table scan. With proper indexing and a caching layer, we could get under one second response time. I'd estimate three to four days of work.
+
+[31:10] Sarah
+Tom, can you scope that out and bring a proposal to next week's sync?
+
+[31:30] Tom
+Sure, I'll have a proposal ready by next Friday.
+
+[32:00] Priya
+On the export options — PDF export is already in progress as part of the analytics dashboard work. Excel export we haven't scoped yet.
+
+[32:30] Sarah
+Let's add Excel export to the Q3 backlog. Priya to write the spec by April 20th.
+
+[33:00] James
+The collaboration features are a bigger lift. That's probably a Q4 item unless we want to do a lightweight version — maybe just shared workspaces without commenting for Q3.
+
+[33:40] Sarah
+Let's do that. Priya, can you scope a lightweight shared workspaces feature for Q3?
+
+[34:00] Priya
+Yes, I'll add it to the roadmap draft and have a scope doc ready by April 15th.
+
+[34:30] Sarah
+Great. Let's do a quick round of blockers before we close. Anyone have anything not covered?
+
+[35:00] Linda
+I'm still waiting on brand guidelines from the marketing team. They were supposed to be delivered two weeks ago. It's blocking finalization of the design system color tokens.
+
+[35:30] Sarah
+I'll follow up with the marketing team directly today. Linda, I'll loop you in on the response.
+
+[36:00] Marcus
+We need access to the production logs for the pipeline debugging. Currently only DevOps has access and the request has been sitting for a week.
+
+[36:30] Sarah
+James, can you escalate that with DevOps?
+
+[36:45] James
+Yes, I'll ping them this afternoon and get it resolved by tomorrow.
+
+[37:10] Kevin
+I need a decision on the app store developer account — we have two options, individual or organization account. Organization is better for the long term but requires a DUNS number which takes time to obtain.
+
+[37:50] Sarah
+Let's go with the organization account. Aisha, can you start the DUNS number application process today?
+
+[38:10] Aisha
+Sure, I'll start it today.
+
+[38:30] Sarah
+Okay great. Let me summarize the decisions and actions before we close.
+
+Decisions made today:
+- Daniel moves to pipeline support from April 7th for two weeks
+- Company details section in signup made optional, moved to post-signup
+- Migrate push notifications to Firebase Cloud Messaging
+- Go with organization Apple Developer account
+- James to enforce branch protection on GitHub
+
+Actions outstanding — I'll follow up on the full list async. Thank you everyone, good meeting.
+
+================================================================
+ACTION ITEMS
+================================================================
+
+[ ] Move Daniel to pipeline support starting April 7th
+    Owner : James
+    Due   : April 7, 2026
+
+[ ] Marcus to sync with James to onboard Daniel
+    Owner : Marcus
+    Due   : April 7, 2026
+
+[ ] Pair with Aisha to validate auth fix on staging
+    Owner : Kevin
+    Due   : April 8, 2026
+
+[ ] Merge and deploy auth service fix
+    Owner : Aisha
+    Due   : April 8, 2026
+
+[ ] Coordinate design system handoff session on April 10th at 2 PM
+    Owner : James
+    Due   : April 10, 2026
+
+[ ] Update design spec for optional company details in signup
+    Owner : Priya
+    Due   : April 18, 2026
+
+[ ] Update wireframes for optional company details flow
+    Owner : Linda
+    Due   : April 18, 2026
+
+[ ] Send staging maintenance window notice
+    Owner : Tom
+    Due   : April 9, 2026
+
+[ ] CC Rachel from QA on maintenance notice
+    Owner : Tom
+    Due   : April 9, 2026
+
+[ ] Document incident pattern for branch protection retrospective
+    Owner : Marcus
+    Due   : April 11, 2026
+
+[ ] Enforce branch protection rules on GitHub
+    Owner : James
+    Due   : April 4, 2026
+
+[ ] Start Firebase Cloud Messaging migration plan
+    Owner : Kevin
+    Due   : April 18, 2026
+
+[ ] Loop in QA on iOS deep link fix
+    Owner : Kevin
+    Due   : April 8, 2026
+
+[ ] Scope search performance improvement proposal
+    Owner : Tom
+    Due   : April 11, 2026
+
+[ ] Write spec for Excel export feature
+    Owner : Priya
+    Due   : April 20, 2026
+
+[ ] Scope lightweight shared workspaces feature for Q3
+    Owner : Priya
+    Due   : April 15, 2026
+
+[ ] Follow up with marketing on brand guidelines
+    Owner : Sarah
+    Due   : April 4, 2026
+
+[ ] Escalate production log access request to DevOps
+    Owner : James
+    Due   : April 5, 2026
+
+[ ] Start DUNS number application for organization Apple Developer account
+    Owner : Aisha
+    Due   : April 4, 2026
+
+================================================================
+END OF TRANSCRIPT
+================================================================

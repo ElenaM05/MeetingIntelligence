@@ -1,0 +1,20 @@
+{
+  "id": "35d4c7f9-6e45-4ee2-baa4-fd5661d119fb",
+  "project": "test",
+  "filename": "q3_sync_meeting.txt",
+  "extension": ".txt",
+  "file_path": "data/transcripts/test/35d4c7f9-6e45-4ee2-baa4-fd5661d119fb.txt",
+  "uploaded_at": "2026-04-04T08:25:03.704169",
+  "word_count": 2048,
+  "speakers": [
+    "Kevin",
+    "Aisha",
+    "Tom",
+    "Priya",
+    "Sarah",
+    "Marcus",
+    "James",
+    "Linda"
+  ],
+  "detected_date": null
+}
