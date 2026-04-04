@@ -1,7 +1,8 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 import storage
 from services.chatbot import chat
+from auth_utils import get_current_user
 
 router = APIRouter()
 
@@ -21,19 +22,19 @@ class ChatResponse(BaseModel):
 
 
 @router.post("/session", summary="Start a new chat session for given transcripts")
-def start_session(body: StartSessionRequest):
-    """
-    Creates a new chat session tied to one or more transcripts.
-    Returns a session_id to use for all subsequent questions.
-    """
+async def start_session(
+    body: StartSessionRequest,
+    current_user: dict = Depends(get_current_user)
+):
     if not body.transcript_ids:
         raise HTTPException(status_code=400, detail="No transcript IDs provided.")
 
+    user_id = current_user["id"]
     for tid in body.transcript_ids:
-        if not storage.get_transcript(tid):
+        if not await storage.get_transcript(tid, user_id):
             raise HTTPException(status_code=404, detail=f"Transcript '{tid}' not found.")
 
-    session = storage.create_session(body.transcript_ids)
+    session = await storage.create_session(user_id, body.transcript_ids)
     return {
         "session_id": session["id"],
         "transcript_ids": session["transcript_ids"],
@@ -42,22 +43,23 @@ def start_session(body: StartSessionRequest):
 
 
 @router.post("/session/{session_id}/ask", summary="Ask a question in an existing session")
-def ask(session_id: str, body: AskRequest) -> ChatResponse:
-    """
-    Ask a question within an existing session.
-    History is maintained server-side — just send your question.
-    """
+async def ask(
+    session_id: str,
+    body: AskRequest,
+    current_user: dict = Depends(get_current_user)
+) -> ChatResponse:
     if not body.question.strip():
         raise HTTPException(status_code=400, detail="Question cannot be empty.")
 
-    session = storage.get_session(session_id)
+    user_id = current_user["id"]
+    session = await storage.get_session(session_id, user_id)
     if not session:
-        raise HTTPException(status_code=404, detail="Session not found. Start a new session first.")
+        raise HTTPException(status_code=404, detail="Session not found.")
 
     transcripts = []
     for tid in session["transcript_ids"]:
-        meta = storage.get_transcript(tid)
-        text = storage.get_transcript_text(tid)
+        meta = await storage.get_transcript(tid, user_id)
+        text = await storage.get_transcript_text(tid, user_id)
         if not meta or not text:
             raise HTTPException(status_code=404, detail=f"Transcript '{tid}' not found.")
         transcripts.append({"filename": meta["filename"], "text": text})
@@ -71,7 +73,7 @@ def ask(session_id: str, body: AskRequest) -> ChatResponse:
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-    updated_session = storage.append_to_session(session_id, body.question, result["answer"])
+    updated_session = await storage.append_to_session(session_id, user_id, body.question, result["answer"])
 
     return ChatResponse(
         session_id=session_id,
@@ -81,21 +83,27 @@ def ask(session_id: str, body: AskRequest) -> ChatResponse:
 
 
 @router.get("/session/{session_id}", summary="Get session history")
-def get_session(session_id: str):
-    session = storage.get_session(session_id)
+async def get_session(
+    session_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    session = await storage.get_session(session_id, current_user["id"])
     if not session:
         raise HTTPException(status_code=404, detail="Session not found.")
     return session
 
 
 @router.delete("/session/{session_id}", summary="Delete a session")
-def delete_session(session_id: str):
-    deleted = storage.delete_session(session_id)
+async def delete_session(
+    session_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    deleted = await storage.delete_session(session_id, current_user["id"])
     if not deleted:
         raise HTTPException(status_code=404, detail="Session not found.")
     return {"deleted": True, "session_id": session_id}
 
 
 @router.get("/sessions", summary="List all sessions")
-def list_sessions():
-    return storage.list_sessions()
+async def list_sessions(current_user: dict = Depends(get_current_user)):
+    return await storage.list_sessions(current_user["id"])
