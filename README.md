@@ -1,41 +1,66 @@
-# Cymonic — Meeting Intelligence App
+# Meeting Intelligence Hub
 
-Extract decisions, action items, and insights from meeting transcripts using AI.
+## Project Title
 
----
+Meeting Intelligence Hub
 
-## Stack
+## The Problem
 
-- **Backend** — FastAPI, Python 3.10+, MongoDB
-- **Frontend** — React, Tailwind CSS
-- **AI** — Cerebras (llama3.1-8b / qwen-3-235b-a22b-instruct-2507)
+Meetings generate a large volume of spoken information, but extracting actionable outcomes — decisions made, tasks assigned, and deadlines set — requires manual review that is time-consuming and error-prone. Teams often lose track of commitments made in meetings, leading to missed follow-ups and miscommunication. There is no easy way to query or search across multiple meeting transcripts to find specific information quickly.
 
----
+## The Solution
 
-## Prerequisites
+Meeting Intelligence Hub automatically processes meeting transcripts using AI to extract structured decisions and action items, assign ownership and deadlines, and generate exportable reports. Users can upload one or more transcript files, run AI-powered extraction in one click, and receive a clean breakdown of every decision and task from the meeting. An AI chat assistant allows users to ask natural language questions directly about the transcript content. Results can be exported as PDF, CSV, or JSON for sharing with teams.
+
+Key features:
+- AI extraction of decisions, action items, owners, deadlines, and priorities
+- Multi-transcript support with cross-meeting synthesis
+- Chat interface for querying transcript content
+- Export to PDF, CSV, and JSON
+- JWT-based authentication with protected routes
+
+## Tech Stack
+
+**Programming Languages**
+- Python 3.10
+- JavaScript (React)
+
+**Frameworks**
+- FastAPI — backend API
+- React — frontend UI
+- Tailwind CSS — styling
+
+**Databases**
+- MongoDB Atlas — transcript storage, extraction results, chat sessions
+- Motor — async MongoDB driver for Python
+
+**APIs and Third-Party Tools**
+- Cerebras AI — LLM inference (Llama 3.1 8B / qwen-3-235b)
+- ReportLab — PDF generation
+- JSON Web Tokens (JWT) — authentication
+
+## Setup Instructions
+
+### Prerequisites
 
 - Python 3.10+
 - Node.js 18+
-- MongoDB (local or Atlas)
-- A Cerebras API key — get one at [cloud.cerebras.ai](https://cloud.cerebras.ai)
+- MongoDB Atlas account (free tier works)
+- Cerebras API key — get one at [cloud.cerebras.ai](https://cloud.cerebras.ai)
 
----
-
-## Setup
-
-### 1. Clone the repo
+### 1. Clone the repository
 
 ```bash
-git clone <your-repo-url>
-cd cymonic
+git clone https://github.com/ElenaM05/MeetingIntelligence.git
+cd MeetingIntelligence
 ```
 
-### 2. Backend
+### 2. Backend setup
 
 ```bash
 cd backend
 python -m venv venv
-source venv/bin/activate       # Windows: venv\Scripts\activate
+source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
@@ -43,97 +68,32 @@ Create a `.env` file inside `backend/`:
 
 ```
 CEREBRAS_API_KEY=your_cerebras_api_key
-MONGODB_URI=mongodb://localhost:27017
-JWT_SECRET=your_secret_key_here
+MONGODB_URI=your_mongodb_atlas_connection_string
+JWT_SECRET=any_random_secret_string
 ```
 
-### 3. Frontend
+Start the backend:
+
+```bash
+uvicorn main:app --reload --port 8000
+```
+
+### 3. Frontend setup
 
 ```bash
 cd frontend
 npm install
-```
-
----
-
-## Running
-
-### Start the backend
-
-```bash
-cd backend
-source venv/bin/activate
-uvicorn main:app --reload --port 8000
-```
-
-### Start the frontend
-
-```bash
-cd frontend
 npm start
 ```
 
-App runs at [http://localhost:3000](http://localhost:3000)  
-API runs at [http://localhost:8000](http://localhost:8000)
+The app will open at [http://localhost:3000](http://localhost:3000).
 
----
+The backend API runs at [http://localhost:8000](http://localhost:8000).
 
-## Usage
+### 4. Usage
 
 1. Register an account and log in
-2. Upload one or more meeting transcript files (.txt, .vtt)
-3. Click **Extract** to extract decisions and action items
-4. Export results as PDF, CSV, or JSON
+2. Upload a meeting transcript (.txt or .vtt file)
+3. Click **Extract** to run AI extraction
+4. View decisions and action items, export as PDF/CSV/JSON
 5. Click **Chat** to ask questions about the meeting
-
----
-
-## Available Models
-
-Set the model in `backend/services/extractor.py` and `backend/services/chatbot.py`:
-
-| Model ID | Notes |
-|---|---|
-| `llama3.1-8b` | Fast, free tier, lower accuracy |
-| `qwen-3-235b-a22b-instruct-2507` | Better reasoning, preview model |
-| `gpt-oss-120b` | Best quality, requires separate access at cerebras.ai/openai |
-
----
-
-## Environment Variables
-
-| Variable | Description |
-|---|---|
-| `CEREBRAS_API_KEY` | Cerebras API key |
-| `MONGODB_URI` | MongoDB connection string |
-| `JWT_SECRET` | Secret used to sign auth tokens |
-
----
-
-## Project Structure
-
-```
-cymonic/
-├── backend/
-│   ├── main.py
-│   ├── auth_utils.py
-│   ├── storage.py
-│   ├── routers/
-│   │   ├── auth.py
-│   │   ├── transcripts.py
-│   │   ├── extract.py
-│   │   └── chat.py
-│   └── services/
-│       ├── extractor.py
-│       └── chatbot.py
-└── frontend/
-    └── src/
-        ├── App.jsx
-        ├── api/
-        │   └── client.js
-        └── pages/
-            ├── Auth.jsx
-            ├── Home.jsx
-            ├── Results.jsx
-            └── Chat.jsx
-```
