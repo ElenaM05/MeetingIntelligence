@@ -35,34 +35,27 @@ FORMATTING RULES:
 - Keep responses clean and minimal — no decorative punctuation or symbols.
 - For citations, write "Source:" not "📎 Source:" or "📌 Note:".
 """.strip()
-def build_transcript_context(transcripts: list[dict]) -> str:
-    """
-    Build a single context string from multiple transcripts.
-    Each transcript is labelled with its filename.
-    """
+def build_transcript_context(transcripts: list[dict], extraction_result: dict = None) -> str:
     parts = []
     for t in transcripts:
         parts.append(f"=== TRANSCRIPT: {t['filename']} ===\n{t['text']}\n")
+    
+    if extraction_result:
+        parts.append("=== CURRENT ACTION ITEM STATUSES ===")
+        for item in extraction_result.get("action_items", []):
+            status = item.get("status", "pending")
+            parts.append(f"- [{status.upper()}] {item.get('what')} (Owner: {item.get('who')}, Due: {item.get('by_when')})")
+        parts.append("")
+    
     return "\n".join(parts)
-
 
 def chat(
     transcripts: list[dict],
     history: list[dict],
     question: str,
+    extraction_result: dict = None,  # ← add this
 ) -> dict:
-    """
-    Send a question to the chatbot with full transcript context and conversation history.
-
-    Args:
-        transcripts: list of dicts with 'filename' and 'text'
-        history: list of prior messages [{"role": "user"|"assistant", "content": "..."}]
-        question: the user's latest question
-
-    Returns:
-        dict with 'answer' and updated 'history'
-    """
-    transcript_context = build_transcript_context(transcripts)
+    transcript_context = build_transcript_context(transcripts, extraction_result)
     system_message = f"{CHAT_SYSTEM_PROMPT}\n\n--- TRANSCRIPTS ---\n{transcript_context}"
 
     messages = [

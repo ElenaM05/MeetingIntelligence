@@ -99,6 +99,10 @@ export const exportPDF = (transcriptId) =>
     `${BASE_URL}/api/extract/${transcriptId}/export/pdf`,
     `extraction_${transcriptId}.pdf`
   );
+export const updateActionItemStatus = (transcriptId, itemId, status) =>
+  api.patch(`/extract/${transcriptId}/action-items/${itemId}`, { status });
+export const getDraftEmail = (transcriptId) =>
+  api.get(`/extract/${transcriptId}/draft-email`);
 
 // Chat
 export const startSession = (transcriptIds) =>

@@ -1,9 +1,10 @@
 import { BrowserRouter, Routes, Route, NavLink, Navigate, useNavigate } from "react-router-dom";
-import { LayoutDashboard, MessageSquare, LogOut } from "lucide-react";
+import { LayoutDashboard, MessageSquare, LogOut, CheckSquare } from "lucide-react";
 import Home from "./pages/Home";
 import Results from "./pages/Results";
 import Chat from "./pages/Chat";
 import Auth from "./pages/Auth";
+import Dashboard from "./pages/Dashboard";
 
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem("token");
@@ -55,6 +56,19 @@ function Nav() {
           <MessageSquare size={15} />
           Chat
         </NavLink>
+        <NavLink
+          to="/dashboard"
+          className={({ isActive }) =>
+            `flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              isActive
+                ? "bg-stone-800 text-stone-100"
+                : "text-stone-400 hover:text-stone-200 hover:bg-stone-800/50"
+            }`
+          }
+        >
+          <CheckSquare size={15} />
+          Dashboard
+        </NavLink>
         <div className="w-px h-5 bg-stone-700 mx-2" />
         <span className="text-xs text-stone-500 mr-2">{user.email}</span>
         <button
@@ -63,6 +77,7 @@ function Nav() {
         >
           <LogOut size={14} />
         </button>
+        
       </div>
     </nav>
   );
@@ -85,6 +100,7 @@ function App() {
                     <Route path="/results/:id" element={<Results />} />
                     <Route path="/chat" element={<Chat />} />
                     <Route path="/chat/:sessionId" element={<Chat />} />
+                    <Route path="/dashboard" element={<Dashboard />} />
                   </Routes>
                 </main>
               </ProtectedRoute>

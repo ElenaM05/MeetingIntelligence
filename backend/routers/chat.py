@@ -64,11 +64,28 @@ async def ask(
             raise HTTPException(status_code=404, detail=f"Transcript '{tid}' not found.")
         transcripts.append({"filename": meta["filename"], "text": text})
 
+    # Fetch extraction results for all transcripts to get current action item statuses
+    extraction_result = None
+    if len(session["transcript_ids"]) == 1:
+        extraction_result = await storage.get_extraction_result(session["transcript_ids"][0], user_id)
+    else:
+        # For multi-transcript sessions, merge action items from all extractions
+        all_action_items = []
+        all_decisions = []
+        for tid in session["transcript_ids"]:
+            result = await storage.get_extraction_result(tid, user_id)
+            if result:
+                all_action_items.extend(result.get("action_items", []))
+                all_decisions.extend(result.get("decisions", []))
+        if all_action_items or all_decisions:
+            extraction_result = {"action_items": all_action_items, "decisions": all_decisions}
+
     try:
         result = chat(
             transcripts=transcripts,
             history=session["history"],
             question=body.question,
+            extraction_result=extraction_result,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -12,6 +12,7 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reportlab.lib import colors
 import storage
 from services.extractor import extract_from_transcript, extract_from_multiple
+from services.email_drafter import draft_followup_email
 from auth_utils import get_current_user
 
 router = APIRouter()
@@ -91,6 +92,23 @@ async def get_result(
             detail="No extraction result found. Run POST /api/extract first.",
         )
     return result
+
+
+@router.get("/{transcript_id}/draft-email", summary="Generate a follow-up email draft")
+async def get_email_draft(
+    transcript_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    result = await storage.get_extraction_result(transcript_id, current_user["id"])
+    if not result:
+        raise HTTPException(status_code=404, detail="No extraction result found. Run extraction first.")
+
+    try:
+        email = draft_followup_email(result)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    return {"subject": email["subject"], "body": email["body"]}
 
 
 @router.get("/{transcript_id}/export/csv", summary="Export action items as CSV")
@@ -241,3 +259,32 @@ async def export_pdf(
         media_type="application/pdf",
         headers={"Content-Disposition": f"attachment; filename=extraction_{transcript_id}.pdf"},
     )
+
+
+class UpdateActionItemRequest(BaseModel):
+    status: str
+
+
+@router.patch("/{transcript_id}/action-items/{item_id}", summary="Update action item status")
+async def update_action_item_status(
+    transcript_id: str,
+    item_id: str,
+    body: UpdateActionItemRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    result = await storage.get_extraction_result(transcript_id, current_user["id"])
+    if not result:
+        raise HTTPException(status_code=404, detail="No extraction result found.")
+
+    updated = False
+    for item in result.get("action_items", []):
+        if item["id"] == item_id:
+            item["status"] = body.status
+            updated = True
+            break
+
+    if not updated:
+        raise HTTPException(status_code=404, detail="Action item not found.")
+
+    await storage.save_extraction_result(transcript_id, current_user["id"], result)
+    return {"success": True, "item_id": item_id, "status": body.status}

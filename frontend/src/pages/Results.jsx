@@ -1,12 +1,18 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getExtractionResult, extractTranscripts, exportCSV, exportPDF, exportJSON } from "../api/client";
-import { ArrowLeft, Download, Zap, CheckSquare, Lightbulb, Users, Calendar, AlertCircle, MessageSquare, ChevronDown } from "lucide-react";
+import { getExtractionResult, extractTranscripts, exportCSV, exportPDF, exportJSON, updateActionItemStatus, getDraftEmail } from "../api/client";
+import { ArrowLeft, Download, Zap, CheckSquare, Lightbulb, Users, Calendar, AlertCircle, MessageSquare, ChevronDown, Check, Mail, Copy, X } from "lucide-react";
 
 const PRIORITY_STYLES = {
   high: "bg-red-500/10 text-red-400 border-red-500/20",
   medium: "bg-amber-500/10 text-amber-400 border-amber-500/20",
   low: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+};
+
+const isOverdue = (byWhen, status) => {
+  if (!byWhen || status === "complete") return false;
+  const due = new Date(byWhen);
+  return !isNaN(due) && due < new Date();
 };
 
 export default function Results() {
@@ -18,6 +24,11 @@ export default function Results() {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("actions");
   const [exportOpen, setExportOpen] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(null);
+  const [emailModal, setEmailModal] = useState(false);
+  const [emailDraft, setEmailDraft] = useState(null);
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
   const exportRef = useRef(null);
 
   useEffect(() => {
@@ -34,7 +45,6 @@ export default function Results() {
     load();
   }, [id]);
 
-  // Close export dropdown when clicking outside
   useEffect(() => {
     const handler = (e) => {
       if (exportRef.current && !exportRef.current.contains(e.target)) {
@@ -62,6 +72,49 @@ export default function Results() {
     const { startSession } = await import("../api/client");
     const res = await startSession([id]);
     navigate(`/chat/${res.data.session_id}`);
+  };
+
+  const handleToggleStatus = async (item) => {
+    const newStatus = item.status === "complete" ? "pending" : "complete";
+    setUpdatingStatus(item.id);
+    try {
+      await updateActionItemStatus(id, item.id, newStatus);
+      setResult((prev) => ({
+        ...prev,
+        action_items: prev.action_items.map((a) =>
+          a.id === item.id ? { ...a, status: newStatus } : a
+        ),
+      }));
+    } catch {
+      // silently fail
+    } finally {
+      setUpdatingStatus(null);
+    }
+  };
+
+  const handleDraftEmail = async () => {
+    setEmailModal(true);
+    if (emailDraft) return;
+    setEmailLoading(true);
+    try {
+      const res = await getDraftEmail(id);
+      setEmailDraft(res.data);
+    } catch (e) {
+      console.error("Draft email error:", e.response?.data);  // add this
+      setEmailDraft({ 
+        subject: "Error", 
+        body: e.response?.data?.detail || "Failed to generate email. Please try again." 
+      });
+    } finally {
+      setEmailLoading(false);
+    }
+  };
+
+  const handleCopy = () => {
+    const text = `Subject: ${emailDraft.subject}\n\n${emailDraft.body}`;
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   if (loading) {
@@ -119,6 +172,13 @@ export default function Results() {
                 Chat
               </button>
               <button
+                onClick={handleDraftEmail}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl border border-stone-700 text-stone-300 text-sm font-medium hover:bg-stone-800 transition-colors"
+              >
+                <Mail size={14} />
+                Draft Email
+              </button>
+              <button
                 onClick={handleExtract}
                 disabled={extracting}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl border border-stone-700 text-stone-300 text-sm font-medium hover:bg-stone-800 transition-colors disabled:opacity-50"
@@ -127,7 +187,6 @@ export default function Results() {
                 {extracting ? "Re-extracting..." : "Re-extract"}
               </button>
 
-              {/* Export dropdown — click to open, click outside to close */}
               <div className="relative" ref={exportRef}>
                 <button
                   onClick={() => setExportOpen((prev) => !prev)}
@@ -157,7 +216,6 @@ export default function Results() {
                     >
                       JSON
                     </button>
-                    
                   </div>
                 )}
               </div>
@@ -212,40 +270,57 @@ export default function Results() {
                   </tr>
                 </thead>
                 <tbody>
-                  {result.action_items?.map((item, i) => (
-                    <tr
-                      key={item.id}
-                      className={`border-b border-stone-800/50 hover:bg-stone-800/30 transition-colors ${
-                        i === result.action_items.length - 1 ? "border-b-0" : ""
-                      }`}
-                    >
-                      <td className="px-5 py-4 text-sm text-stone-200 max-w-xs">{item.what}</td>
-                      <td className="px-5 py-4">
-                        <span className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-stone-700 flex items-center justify-center text-xs font-bold text-stone-300">
-                            {item.who?.[0] || "?"}
-                          </div>
-                          <span className="text-sm text-stone-300">{item.who || "Unassigned"}</span>
-                        </span>
-                      </td>
-                      <td className="px-5 py-4">
-                        <span className="flex items-center gap-1.5 text-sm text-stone-400">
-                          <Calendar size={12} />
-                          {item.by_when || "—"}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4">
-                        <span className={`inline-flex px-2.5 py-1 rounded-lg text-xs font-medium border capitalize ${PRIORITY_STYLES[item.priority] || PRIORITY_STYLES.medium}`}>
-                          {item.priority}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4">
-                        <span className="inline-flex px-2.5 py-1 rounded-lg text-xs font-medium bg-stone-800 text-stone-400 border border-stone-700 capitalize">
-                          {item.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                  {result.action_items?.map((item, i) => {
+                    const isComplete = item.status === "complete";
+                    const isUpdating = updatingStatus === item.id;
+                    return (
+                      <tr
+                        key={item.id}
+                        className={`border-b border-stone-800/50 hover:bg-stone-800/30 transition-colors ${
+                          i === result.action_items.length - 1 ? "border-b-0" : ""
+                        }`}
+                      >
+                        <td className={`px-5 py-4 text-sm max-w-xs transition-colors ${isComplete ? "text-stone-500 line-through" : "text-stone-200"}`}>
+                          {item.what}
+                        </td>
+                        <td className="px-5 py-4">
+                          <span className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full bg-stone-700 flex items-center justify-center text-xs font-bold text-stone-300">
+                              {item.who?.[0] || "?"}
+                            </div>
+                            <span className="text-sm text-stone-300">{item.who || "Unassigned"}</span>
+                          </span>
+                        </td>
+                        <td className="px-5 py-4">
+                          <span className="flex items-center gap-1.5 text-sm text-stone-400">
+                            <Calendar size={12} />
+                            {item.by_when || "—"}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4">
+                          <span className={`inline-flex px-2.5 py-1 rounded-lg text-xs font-medium border capitalize ${PRIORITY_STYLES[item.priority] || PRIORITY_STYLES.medium}`}>
+                            {item.priority}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4">
+                          <button
+                            onClick={() => handleToggleStatus(item)}
+                            disabled={isUpdating}
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border capitalize transition-colors disabled:opacity-50 ${
+                              isComplete
+                                ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20"
+                                : isOverdue(item.by_when, item.status)
+                                ? "bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20"
+                                : "bg-stone-800 text-stone-400 border-stone-700 hover:bg-stone-700 hover:text-stone-200"
+                            }`}
+                          >
+                            {isComplete && <Check size={11} />}
+                            {isUpdating ? "..." : isComplete ? "complete" : isOverdue(item.by_when, item.status) ? "overdue" : item.status || "pending"}
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -254,7 +329,7 @@ export default function Results() {
           {/* Decisions */}
           {activeTab === "decisions" && (
             <div className="space-y-3">
-              {result.decisions?.map((d, i) => (
+              {result.decisions?.map((d) => (
                 <div key={d.id} className="bg-stone-900 border border-stone-800 rounded-2xl p-5 hover:border-stone-700 transition-colors">
                   <div className="flex items-start gap-4">
                     <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -284,6 +359,61 @@ export default function Results() {
             </div>
           )}
         </>
+      )}
+
+      {/* Email Draft Modal */}
+      {emailModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-stone-900 border border-stone-700 rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-stone-800">
+              <div className="flex items-center gap-2">
+                <Mail size={16} className="text-stone-400" />
+                <span className="text-sm font-semibold text-stone-200">Follow-up Email Draft</span>
+              </div>
+              <button
+                onClick={() => setEmailModal(false)}
+                className="text-stone-500 hover:text-stone-300 transition-colors"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-6 py-5">
+              {emailLoading ? (
+                <div className="flex items-center justify-center h-32 text-stone-500 text-sm">
+                  Drafting email...
+                </div>
+              ) : emailDraft ? (
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-xs text-stone-500 uppercase tracking-widest font-semibold mb-1">Subject</p>
+                    <p className="text-stone-200 text-sm font-medium bg-stone-800 px-4 py-2.5 rounded-xl border border-stone-700">
+                      {emailDraft.subject}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-stone-500 uppercase tracking-widest font-semibold mb-1">Body</p>
+                    <pre className="text-stone-300 text-sm whitespace-pre-wrap font-sans bg-stone-800 px-4 py-4 rounded-xl border border-stone-700 leading-relaxed">
+                      {emailDraft.body}
+                    </pre>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
+            {emailDraft && !emailLoading && (
+              <div className="px-6 py-4 border-t border-stone-800 flex justify-end">
+                <button
+                  onClick={handleCopy}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500 text-stone-950 text-sm font-semibold hover:bg-emerald-400 transition-colors"
+                >
+                  <Copy size={14} />
+                  {copied ? "Copied!" : "Copy to Clipboard"}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

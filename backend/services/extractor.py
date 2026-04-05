@@ -26,9 +26,9 @@ Return this exact structure:
       "id": "a1",
       "what": "Clear description of the task",
       "who": "Full name of the person responsible",
-      "by_when": "Deadline or 'Not specified'",
+      "by_when": "Deadline in YYYY-MM-DD format (e.g. 2026-04-08), or 'Not specified' if no deadline is mentioned",
       "priority": "high | medium | low",
-      "status": "open"
+      "status": "pending"
     }
   ],
   "summary": "2-3 sentence overall meeting summary"
