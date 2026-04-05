@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { login, register } from "../api/client";
-import { Mic2, AlertCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -40,10 +40,8 @@ export default function Auth() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex items-center gap-3 justify-center mb-10">
-          <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center">
-            <Mic2 size={20} className="text-stone-950" />
-          </div>
-          <span className="font-bold text-2xl tracking-tight text-stone-100">cymonic</span>
+          <img src="/logo.svg" alt="Meeting Intelligence Hub" width="40" height="40" />
+          <span className="font-bold text-lg tracking-tight text-stone-100">Meeting Intelligence Hub</span>
         </div>
 
         {/* Card */}

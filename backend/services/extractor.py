@@ -53,7 +53,7 @@ def extract_from_transcript(text: str, filename: str) -> dict:
     user_message = f"Transcript filename: {filename}\n\n---\n\n{text[:40000]}"
 
     message = client.chat.completions.create(
-        model="gpt-oss-120b",
+        model="qwen-3-235b-a22b-instruct-2507",
         max_tokens=4096,
         messages=[
             {"role": "system", "content": EXTRACTION_SYSTEM_PROMPT},

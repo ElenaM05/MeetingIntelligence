@@ -63,9 +63,6 @@ def chat(
         dict with 'answer' and updated 'history'
     """
     transcript_context = build_transcript_context(transcripts)
-    print("=== TRANSCRIPT CONTEXT ===")  # 👈 add this
-    print(transcript_context)             # 👈 and this
-    print("==========================") 
     system_message = f"{CHAT_SYSTEM_PROMPT}\n\n--- TRANSCRIPTS ---\n{transcript_context}"
 
     messages = [

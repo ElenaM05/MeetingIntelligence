@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, NavLink, Navigate, useNavigate } from "react-router-dom";
-import { Mic2, LayoutDashboard, MessageSquare, LogOut } from "lucide-react";
+import { LayoutDashboard, MessageSquare, LogOut } from "lucide-react";
 import Home from "./pages/Home";
 import Results from "./pages/Results";
 import Chat from "./pages/Chat";
@@ -24,10 +24,8 @@ function Nav() {
   return (
     <nav className="border-b border-stone-800 px-8 py-4 flex items-center justify-between">
       <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center">
-          <Mic2 size={16} className="text-stone-950" />
-        </div>
-        <span className="font-bold text-lg tracking-tight text-stone-100">cymonic</span>
+        <img src="/logo.svg" alt="Meeting Intelligence Hub" width="40" height="40" />
+        <span className="font-bold text-lg tracking-tight text-stone-100">Meeting Intelligence Hub</span>
       </div>
       <div className="flex items-center gap-1">
         <NavLink
