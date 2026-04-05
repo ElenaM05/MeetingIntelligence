@@ -1,7 +1,9 @@
 import axios from "axios";
 
+const BASE_URL = process.env.REACT_APP_API_URL;
+
 const api = axios.create({
-  baseURL: "http://localhost:8000/api",
+  baseURL: `${BASE_URL}/api`,
   headers: { "Content-Type": "application/json" },
 });
 
@@ -82,21 +84,22 @@ const downloadWithAuth = async (url, filename) => {
 
 export const exportCSV = (transcriptId) =>
   downloadWithAuth(
-    `http://localhost:8000/api/extract/${transcriptId}/export/csv`,
+    `${BASE_URL}/api/extract/${transcriptId}/export/csv`,
     `extraction_${transcriptId}.csv`
   );
 
 export const exportJSON = (transcriptId) =>
   downloadWithAuth(
-    `http://localhost:8000/api/extract/${transcriptId}/export/json`,
+    `${BASE_URL}/api/extract/${transcriptId}/export/json`,
     `extraction_${transcriptId}.json`
   );
 
 export const exportPDF = (transcriptId) =>
   downloadWithAuth(
-    `http://localhost:8000/api/extract/${transcriptId}/export/pdf`,
+    `${BASE_URL}/api/extract/${transcriptId}/export/pdf`,
     `extraction_${transcriptId}.pdf`
   );
+
 // Chat
 export const startSession = (transcriptIds) =>
   api.post("/chat/session", { transcript_ids: transcriptIds });
