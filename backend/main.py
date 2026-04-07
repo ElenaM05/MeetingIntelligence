@@ -10,7 +10,7 @@ from database import init_db
 from storage import init_storage
 from routers import transcripts, extract, chat
 from routers import auth
-
+from routers import sentiment
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -38,6 +38,7 @@ app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
 app.include_router(transcripts.router, prefix="/api/transcripts", tags=["Transcripts"])
 app.include_router(extract.router, prefix="/api/extract", tags=["Extraction"])
 app.include_router(chat.router, prefix="/api/chat", tags=["Chat"])
+app.include_router(sentiment.router, prefix="/api/sentiment", tags=["sentiment"])
 
 
 @app.get("/health")

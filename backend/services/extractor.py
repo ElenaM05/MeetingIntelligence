@@ -3,7 +3,6 @@ import json
 import re
 from cerebras.cloud.sdk import Cerebras
 
-# Singleton client — Cerebras recommends not reconstructing on every call
 client = Cerebras(api_key=os.environ["CEREBRAS_API_KEY"])
 
 EXTRACTION_SYSTEM_PROMPT = """

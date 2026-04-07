@@ -1,5 +1,6 @@
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Query, Depends
 from typing import Annotated
+from pydantic import BaseModel
 import storage
 from auth_utils import get_current_user
 from services.extractor import extract_from_transcript
@@ -8,6 +9,59 @@ router = APIRouter()
 
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB per file
 
+class RenameProjectRequest(BaseModel):
+    old_name: str
+    new_name: str
+ 
+ 
+@router.patch("/project/rename", summary="Rename a project")
+async def rename_project(
+    body: RenameProjectRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    user_id = current_user["id"]
+    old_name = body.old_name.strip()
+    new_name = body.new_name.strip()
+ 
+    if not new_name:
+        raise HTTPException(status_code=400, detail="New project name cannot be empty.")
+    if old_name == new_name:
+        return {"updated": 0}
+ 
+    col = await storage.get_collection("transcripts")
+    result = await col.update_many(
+        {"user_id": user_id, "project": old_name},
+        {"$set": {"project": new_name}},
+    )
+    return {"updated": result.modified_count}
+ 
+ 
+@router.delete("/project/{project_name}", summary="Delete a project and all its transcripts")
+async def delete_project(
+    project_name: str,
+    current_user: dict = Depends(get_current_user),
+):
+    user_id = current_user["id"]
+ 
+    # Find all transcript IDs in this project
+    col = await storage.get_collection("transcripts")
+    cursor = col.find({"user_id": user_id, "project": project_name}, {"_id": 1})
+    transcript_ids = [doc["_id"] async for doc in cursor]
+ 
+    if not transcript_ids:
+        raise HTTPException(status_code=404, detail="Project not found.")
+ 
+    # Delete transcripts
+    await col.delete_many({"_id": {"$in": transcript_ids}, "user_id": user_id})
+ 
+    # Delete associated extraction results, sentiment results, sessions
+    ex_col   = await storage.get_collection("extraction_results")
+    sent_col = await storage.get_collection("sentiment_results")
+    await ex_col.delete_many({"transcript_id": {"$in": transcript_ids}})
+    await sent_col.delete_many({"transcript_id": {"$in": transcript_ids}})
+ 
+    return {"deleted": len(transcript_ids)}
+ 
 
 @router.post("/upload", summary="Upload and auto-extract transcript files")
 async def upload_transcripts(

@@ -243,3 +243,28 @@ def _detect_date(filename: str, text: str) -> str | None:
         if m:
             return m.group(1)
     return None
+
+async def get_sentiment_result(transcript_id: str, user_id: str) -> dict | None:
+    """Retrieve cached sentiment analysis result from MongoDB."""
+    col = await get_collection("sentiment_results")
+    doc = await col.find_one({"transcript_id": transcript_id, "user_id": user_id})
+    if not doc:
+        return None
+    doc.pop("_id", None)
+    return doc
+
+
+async def save_sentiment_result(transcript_id: str, user_id: str, result: dict):
+    """Save sentiment analysis result to MongoDB."""
+    col = await get_collection("sentiment_results")
+    await col.replace_one(
+        {"transcript_id": transcript_id, "user_id": user_id},
+        {"transcript_id": transcript_id, "user_id": user_id, **result},
+        upsert=True,
+    )
+
+
+async def delete_sentiment_result(transcript_id: str, user_id: str):
+    """Delete cached sentiment result from MongoDB."""
+    col = await get_collection("sentiment_results")
+    await col.delete_one({"transcript_id": transcript_id, "user_id": user_id})

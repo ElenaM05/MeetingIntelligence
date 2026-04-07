@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getExtractionResult, extractTranscripts, exportCSV, exportPDF, exportJSON, updateActionItemStatus, getDraftEmail } from "../api/client";
-import { ArrowLeft, Download, Zap, CheckSquare, Lightbulb, Users, Calendar, AlertCircle, MessageSquare, ChevronDown, Check, Mail, Copy, X } from "lucide-react";
+import { ArrowLeft, Download, Zap, CheckSquare, Lightbulb, Users, Calendar, AlertCircle, MessageSquare, ChevronDown, Check, Mail, Copy, X, Smile} from "lucide-react";
 
 const PRIORITY_STYLES = {
   high: "bg-red-500/10 text-red-400 border-red-500/20",
@@ -164,6 +164,13 @@ export default function Results() {
               </p>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
+              <button
+                onClick={() => navigate(`/vibe/${id}`)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl border border-stone-700 text-stone-300 text-sm font-medium hover:bg-stone-800 transition-colors"
+              >
+                <Smile size={14} />
+                Vibe
+              </button>
               <button
                 onClick={handleChat}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl border border-stone-700 text-stone-300 text-sm font-medium hover:bg-stone-800 transition-colors"

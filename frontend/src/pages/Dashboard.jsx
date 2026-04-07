@@ -1,24 +1,7 @@
-// NOTE: Add this NavLink to your Nav component in App.jsx, after the Transcripts link:
-// import { CheckSquare } from "lucide-react"; // add to existing import
-//
-// <NavLink
-//   to="/dashboard"
-//   className={({ isActive }) =>
-//     `flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-//       isActive
-//         ? "bg-stone-800 text-stone-100"
-//         : "text-stone-400 hover:text-stone-200 hover:bg-stone-800/50"
-//     }`
-//   }
-// >
-//   <CheckSquare size={15} />
-//   Dashboard
-// </NavLink>
-
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  CheckSquare, Clock, AlertCircle, Users, Filter,
+  CheckSquare, Clock, AlertCircle, Filter,
   ChevronRight, Check, ArrowLeft, Loader2, BarChart2,
   Calendar, Zap, Circle
 } from "lucide-react";

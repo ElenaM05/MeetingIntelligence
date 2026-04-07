@@ -5,6 +5,7 @@ import Results from "./pages/Results";
 import Chat from "./pages/Chat";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
+import VibeDashboard from "./pages/VibeDashboard";
 
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem("token");
@@ -101,6 +102,7 @@ function App() {
                     <Route path="/chat" element={<Chat />} />
                     <Route path="/chat/:sessionId" element={<Chat />} />
                     <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/vibe/:id" element={<VibeDashboard />} />
                   </Routes>
                 </main>
               </ProtectedRoute>
@@ -113,3 +115,4 @@ function App() {
 }
 
 export default App;
+<Route path="/vibe/:id" element={<VibeDashboard />} />
