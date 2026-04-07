@@ -79,10 +79,16 @@ uvicorn main:app --reload --port 8000
 ```
 
 ### 3. Frontend setup
-
 ```bash
 cd frontend
 npm install
+```
+
+Create a `.env` file inside `frontend/`:
+```
+REACT_APP_API_URL=http://localhost:8000
+```
+```bash
 npm start
 ```
 
@@ -97,3 +103,17 @@ The backend API runs at [http://localhost:8000](http://localhost:8000).
 3. Click **Extract** to run AI extraction
 4. View decisions and action items, export as PDF/CSV/JSON
 5. Click **Chat** to ask questions about the meeting
+
+## Deployment
+
+**Backend** (Render Web Service)
+- Root Directory: `backend`
+- Build Command: `pip install -r requirements.txt`
+- Start Command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
+- Environment variables: `CEREBRAS_API_KEY`, `MONGODB_URI`, `JWT_SECRET`,`ALLOWED_ORIGINS`
+
+**Frontend** (Render Static Site)
+- Root Directory: `frontend`
+- Build Command: `npm install && npm run build`
+- Publish Directory: `build`
+- Environment variables: `REACT_APP_API_URL=https://your-backend.onrender.com`
